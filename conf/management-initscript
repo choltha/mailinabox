@@ -25,6 +25,16 @@ SCRIPTNAME=/etc/init.d/$NAME
 START=yes
 EXEC_AS_USER=root
 
+# Ensure Python reads/writes files in UTF-8. If the machine
+# triggers some other locale in Python, like ASCII encoding,
+# Python may not be able to read/write files. Here and in
+# setup/start.sh (where the locale is also installed if not
+# already present).
+export LANGUAGE=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_TYPE=en_US.UTF-8
+
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 

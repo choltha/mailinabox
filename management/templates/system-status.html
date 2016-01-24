@@ -10,11 +10,14 @@
   border-top: none;
   padding-top: 0;
 }
-#system-checks .error td {
+#system-checks .status-error td {
   color: #733;
 }
-#system-checks .ok td {
-  color: #030;
+#system-checks .status-warning td {
+  color: #770;
+}
+#system-checks .status-ok td {
+  color: #040;
 }
 #system-checks div.extra {
   display: none;
@@ -31,7 +34,19 @@
   font-family: monospace;
   white-space: pre-wrap;
 }
+
+#system-privacy-setting {
+  float: right;
+  max-width: 20em;
+  margin-bottom: 1em;
+}
 </style>
+
+<div id="system-privacy-setting" style="display: none">
+	<div><a onclick="return enable_privacy(!current_privacy_setting)" href="#"><span>Enable/Disable</span> New-Version Check</a></div>
+	<p style="line-height: 125%"><small>(When enabled, status checks phone-home to check for a new release of Mail-in-a-Box.)</small></p>
+</div>
+
 
 <table id="system-checks" class="table" style="max-width: 60em">
   <thead>
@@ -43,6 +58,18 @@
 <script>
 function show_system_status() {
   $('#system-checks tbody').html("<tr><td colspan='2' class='text-muted'>Loading...</td></tr>")
+
+  api(
+    "/system/privacy",
+    "GET",
+    { },
+    function(r) {
+      current_privacy_setting = r;
+      $('#system-privacy-setting').show();
+      $('#system-privacy-setting a span').text(r ? "Enable" : "Disable");
+      $('#system-privacy-setting p').toggle(r);
+    });
+
   api(
     "/system/status",
     "POST",
@@ -52,9 +79,13 @@ function show_system_status() {
       for (var i = 0; i < r.length; i++) {
         var n = $("<tr><td class='status'/><td class='message'><p style='margin: 0'/><div class='extra'/><a class='showhide' href='#'/></tr>");
         if (i == 0) n.addClass('first')
-        n.addClass(r[i].type)
+        if (r[i].type == "heading")
+                n.addClass(r[i].type)
+        else
+                n.addClass("status-" + r[i].type)
         if (r[i].type == "ok") n.find('td.status').text("✓")
         if (r[i].type == "error") n.find('td.status').text("✖")
+        if (r[i].type == "warning") n.find('td.status').text("?")
         n.find('td.message p').text(r[i].text)
         $('#system-checks tbody').append(n);
 
@@ -75,5 +106,20 @@ function show_system_status() {
         }
       }
     })
+
+}
+
+var current_privacy_setting = null;
+function enable_privacy(status) {
+  api(
+    "/system/privacy",
+    "POST",
+    {
+      value: (status ? "private" : "off")
+    },
+    function(res) {
+      show_system_status();
+    });
+  return false; // disable link
 }
 </script>
